@@ -66,6 +66,11 @@ input[type="submit"] {
     margin-top: 10px;
 }
 
+form p {
+    font-size: .8rem;
+    padding-block: 1rem;
+}
+
 /* Table styles */
 th {
     font-weight: bold;

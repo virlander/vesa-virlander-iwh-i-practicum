@@ -52,11 +52,15 @@ const fetchData = async (id, qp) => {
     const urlPart = (id ? '/' + id : '') + (qp ? '?' + qp : '');
     let data = id ? {} : [];
     try {
-        response = await axios.get(API_URL + urlPart, { headers: authHeader });
+        const response = await axios.get(API_URL + urlPart, { headers: authHeader });
         if (id) {
             data = response.data?.properties || {};
         } else {
-            data = response.data?.results.map((d) => d.properties) || [];
+            data =
+                response.data?.results.map((d) => ({
+                    hs_object_id: d.id,
+                    ...(d.properties || {})
+                })) || [];
         }
     } catch (error) {
         console.error('Error', error);
@@ -69,7 +73,7 @@ const fetchData = async (id, qp) => {
 // * Code for Route 1 goes here
 
 app.get('/', async (req, res) => {
-    const data = await fetchData('', 'properties=name,book_author,book_page_count');
+    const data = await fetchData('', 'properties=name,book_author,book_page_count,book_url');
     res.render('homepage', { title: "Homepage", data: data });
 });
 
@@ -80,7 +84,7 @@ app.get('/update-cobj', async (req, res) => {
     const id = req.query.id || '';
     let data = {};
     if (id) {
-        data = await fetchData(id, 'properties=name,book_author,book_page_count')
+        data = await fetchData(id, 'properties=name,book_author,book_page_count,book_url')
     }
     res.render('updates', { title: "Update Custom Object Form | Integrating With HubSpot I Practicum", id, ...data });
 });
@@ -97,7 +101,8 @@ app.post('/update-cobj', async (req, res) => {
             properties: {
                 name: req.body.name,
                 book_author: req.body.book_author,
-                book_page_count: req.body.book_page_count
+                book_page_count: req.body.book_page_count,
+                book_url: req.body.book_url
             }
         }
     };

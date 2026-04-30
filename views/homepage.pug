@@ -15,11 +15,19 @@ html
                     th(style="background-color: lightgrey;") Book name
                     th(style="background-color: lightgrey;") Author
                     th(style="background-color: lightgrey;") Page number
+                    th(style="background-color: lightgrey;") Actions
             tbody
                 each book in data 
                     tr 
-                        td 
-                            - var id = book.hs_object_id;
-                            a(href="/update-cobj?id=" + id) #{book.name}
+                        td
+                            a(
+                                href=book.book_url
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label=`Open URL for ${book.name || 'book'}, opens in new tab`
+                            ) #{book.name}
                         td #{book.book_author}
                         td #{book.book_page_count}
+                        td 
+                            - var id = book.hs_object_id;
+                            a(href="/update-cobj?id=" + id) Edit book
