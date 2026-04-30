@@ -42,64 +42,11 @@ const API_BASE = hubspotApiBaseUrl(PRIVATE_APP_ACCESS);
 const CUSTOM_OBJECT_TYPE_ID =
     process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID || '2-202024966';
 const API_URL = `${API_BASE}/crm/v3/objects/${CUSTOM_OBJECT_TYPE_ID}`;
-const HUBSPOT_FILE_FOLDER_PATH =
-    process.env.HUBSPOT_FILE_FOLDER_PATH || '/iwh-practicum-book-covers';
 
 const authHeader = {
     Authorization: `Bearer ${PRIVATE_APP_ACCESS}`,
     'Content-Type': 'application/json'
 };
-
-function isHubSpotThumbAssetUrl(url) {
-    if (!url || typeof url !== 'string') {
-        return false;
-    }
-    return /\/thumb\.(jpg|jpeg|png|webp)(\?|$)/i.test(url);
-}
-
-async function getFileSignedUrl(fileIdEncoded, size, options = {}) {
-    const params = { expirationSeconds: 3600 };
-    if (size) {
-        params.size = size;
-    }
-    if (options.upscale) {
-        params.upscale = true;
-    }
-    const response = await axios.get(
-        `${API_BASE}/files/v3/files/${fileIdEncoded}/signed-url`,
-        { headers: authHeader, params }
-    );
-    const d = response.data;
-    return {
-        url: d?.url || null,
-        width: Number(d?.width) || 0,
-        height: Number(d?.height) || 0
-    };
-}
-
-function compareOpenSignedCandidates(a, b) {
-    const areaA = (a.width || 0) * (a.height || 0);
-    const areaB = (b.width || 0) * (b.height || 0);
-    if (areaA !== areaB) {
-        return areaB - areaA;
-    }
-    const pathRank = (url) => {
-        if (!url) {
-            return 0;
-        }
-        if (isHubSpotThumbAssetUrl(url)) {
-            return 0;
-        }
-        if (/\/preview\.(jpg|jpeg|png|webp)(\?|$)/i.test(url)) {
-            return 1;
-        }
-        if (/\/medium\.(jpg|jpeg|png|webp)(\?|$)/i.test(url)) {
-            return 2;
-        }
-        return 3;
-    };
-    return pathRank(b.url) - pathRank(a.url);
-}
 
 const fetchData = async (id, qp) => {
     const urlPart = (id ? '/' + id : '') + (qp ? '?' + qp : '');
