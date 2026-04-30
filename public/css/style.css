@@ -1,29 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
-body, * {
+body {
     font-family: 'Roboto', sans-serif;
+    padding: 1rem;
+}
+
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
 h1 {
-    margin: 1rem;
+    margin-block-end: 1rem;
 }
 
 .cards {
-    display: flex;
     align-items: center;
-    justify-content: space-evenly;
+    display: flex;
     flex-wrap: wrap;
+    justify-content: space-evenly;
 }
 
 .card {
-    flex-basis: 31%;
-    margin: 1rem 0.4rem;
-    padding: 1rem 0.4rem 2.5rem 0.4rem;
     border: solid 1px lightgrey;
     border-radius: 15px;
     box-shadow: 3px 2px 6px lightgrey;
+    flex-basis: 31%;
+    margin-block: 1rem;
+    margin-inline: 0.4rem;
+    padding-block-end: 2.5rem;
+    padding-block-start: 1rem;
+    padding-inline: 0.4rem;
 }
 
 .card__email {
@@ -31,13 +39,14 @@ h1 {
 }
 
 .form-wrapper {
-    font-size: 18px;
-    max-width: 768px;
-    margin: 2rem auto;
-    padding: 2rem;
     border: solid 1px lightgrey;
     border-radius: 15px;
     box-shadow: 3px 2px 6px lightgrey;
+    font-size: 18px;
+    margin-block: 2rem;
+    margin-inline: auto;
+    max-inline-size: 768px;
+    padding: 2rem;
 }
 
 label, input {
@@ -55,4 +64,27 @@ input[type="submit"] {
     border: none;
     padding: .375rem 1rem;
     margin-top: 10px;
+}
+
+form p {
+    font-size: .8rem;
+    padding-block: 1rem;
+}
+
+/* Table styles */
+th {
+    font-weight: bold;
+    text-align: start;
+}
+
+th, td {
+    padding: 1rem;
+}
+
+tr {
+    padding: 0;
+}
+
+tr:nth-child(even) {
+    background-color: #f0f0f0;
 }
