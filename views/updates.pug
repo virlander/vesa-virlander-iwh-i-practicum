@@ -1,0 +1,19 @@
+doctype html
+html 
+    head 
+        title= `${title}`
+        meta(name="viewport" content="width=device-width, initial-scale=1")
+        link(rel="stylesheet", href="/css/style.css")
+    body
+        .form-wrapper 
+            form(method="POST")
+                input(type="hidden" name="id" value=id)
+                label(for="name") Book name
+                input(type="text" name="name" value=name required)
+                label(for="book_author") Author
+                input(type="text" name="book_author" value=book_author required) 
+                label(for="book_page_count") Page number
+                input(type="text" name="book_page_count" value=book_page_count required)
+                input(type="submit" name="Submit")
+        p(align="center")
+            a(href='/') Return to the homepage

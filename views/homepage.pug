@@ -1,0 +1,25 @@
+doctype html
+html 
+    head 
+        title= `${title}`
+        meta(name="viewport" content="width=device-width, initial-scale=1")
+        link(rel="stylesheet", href="/css/style.css")
+    body    
+        h1 Custom Objects Table
+        p
+            a(href='/update-cobj') Add/Update this table
+        br
+        table(cellspacing=4)
+            thead
+                tr 
+                    th(style="background-color: lightgrey;") Book name
+                    th(style="background-color: lightgrey;") Author
+                    th(style="background-color: lightgrey;") Page number
+            tbody
+                each book in data 
+                    tr 
+                        td 
+                            - var id = book.hs_object_id;
+                            a(href="/update-cobj?id=" + id) #{book.name}
+                        td #{book.book_author}
+                        td #{book.book_page_count}

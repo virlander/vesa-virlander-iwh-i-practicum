@@ -1,3 +1,5 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const axios = require('axios');
 const app = express();
@@ -8,19 +10,157 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // * Please DO NOT INCLUDE the private app access token in your repo. Don't do this practicum in your normal account.
-const PRIVATE_APP_ACCESS = '';
+function loadPrivateAppToken() {
+    const raw =
+        process.env.PRIVATE_APP_ACCESS || process.env.PRIVATE_APP_ACCESS_TOKEN || '';
+    let token = String(raw).trim();
+    if (
+        (token.startsWith('"') && token.endsWith('"')) ||
+        (token.startsWith("'") && token.endsWith("'"))
+    ) {
+        token = token.slice(1, -1).trim();
+    }
+    return token;
+}
+
+const PRIVATE_APP_ACCESS = loadPrivateAppToken();
+
+// * EU portal sfuff
+function hubspotApiBaseUrl(token) {
+    const fromEnv = (process.env.HUBSPOT_API_BASE_URL || '').trim().replace(/\/$/, '');
+    if (fromEnv) {
+        return fromEnv;
+    }
+    const t = String(token || '').toLowerCase();
+    if (t.startsWith('pat-eu1-')) {
+        return 'https://api-eu1.hubapi.com';
+    }
+    return 'https://api.hubapi.com';
+}
+
+const API_BASE = hubspotApiBaseUrl(PRIVATE_APP_ACCESS);
+const CUSTOM_OBJECT_TYPE_ID =
+    process.env.HUBSPOT_CUSTOM_OBJECT_TYPE_ID || '2-202024966';
+const API_URL = `${API_BASE}/crm/v3/objects/${CUSTOM_OBJECT_TYPE_ID}`;
+const HUBSPOT_FILE_FOLDER_PATH =
+    process.env.HUBSPOT_FILE_FOLDER_PATH || '/iwh-practicum-book-covers';
+
+const authHeader = {
+    Authorization: `Bearer ${PRIVATE_APP_ACCESS}`,
+    'Content-Type': 'application/json'
+};
+
+function isHubSpotThumbAssetUrl(url) {
+    if (!url || typeof url !== 'string') {
+        return false;
+    }
+    return /\/thumb\.(jpg|jpeg|png|webp)(\?|$)/i.test(url);
+}
+
+async function getFileSignedUrl(fileIdEncoded, size, options = {}) {
+    const params = { expirationSeconds: 3600 };
+    if (size) {
+        params.size = size;
+    }
+    if (options.upscale) {
+        params.upscale = true;
+    }
+    const response = await axios.get(
+        `${API_BASE}/files/v3/files/${fileIdEncoded}/signed-url`,
+        { headers: authHeader, params }
+    );
+    const d = response.data;
+    return {
+        url: d?.url || null,
+        width: Number(d?.width) || 0,
+        height: Number(d?.height) || 0
+    };
+}
+
+function compareOpenSignedCandidates(a, b) {
+    const areaA = (a.width || 0) * (a.height || 0);
+    const areaB = (b.width || 0) * (b.height || 0);
+    if (areaA !== areaB) {
+        return areaB - areaA;
+    }
+    const pathRank = (url) => {
+        if (!url) {
+            return 0;
+        }
+        if (isHubSpotThumbAssetUrl(url)) {
+            return 0;
+        }
+        if (/\/preview\.(jpg|jpeg|png|webp)(\?|$)/i.test(url)) {
+            return 1;
+        }
+        if (/\/medium\.(jpg|jpeg|png|webp)(\?|$)/i.test(url)) {
+            return 2;
+        }
+        return 3;
+    };
+    return pathRank(b.url) - pathRank(a.url);
+}
+
+const fetchData = async (id, qp) => {
+    const urlPart = (id ? '/' + id : '') + (qp ? '?' + qp : '');
+    let data = id ? {} : [];
+    try {
+        response = await axios.get(API_URL + urlPart, { headers: authHeader });
+        if (id) {
+            data = response.data?.properties || {};
+        } else {
+            data = response.data?.results.map((d) => d.properties) || [];
+        }
+    } catch (error) {
+        console.error('Error', error);
+    }
+    return data;
+}
 
 // TODO: ROUTE 1 - Create a new app.get route for the homepage to call your custom object data. Pass this data along to the front-end and create a new pug template in the views folder.
 
 // * Code for Route 1 goes here
 
+app.get('/', async (req, res) => {
+    const data = await fetchData('', 'properties=name,book_author,book_page_count');
+    res.render('homepage', { title: "Homepage", data: data });
+});
+
 // TODO: ROUTE 2 - Create a new app.get route for the form to create or update new custom object data. Send this data along in the next route.
 
 // * Code for Route 2 goes here
+app.get('/update-cobj', async (req, res) => {
+    const id = req.query.id || '';
+    let data = {};
+    if (id) {
+        data = await fetchData(id, 'properties=name,book_author,book_page_count')
+    }
+    res.render('updates', { title: "Update Custom Object Form | Integrating With HubSpot I Practicum", id, ...data });
+});
 
 // TODO: ROUTE 3 - Create a new app.post route for the custom objects form to create or update your custom object data. Once executed, redirect the user to the homepage.
 
 // * Code for Route 3 goes here
+app.post('/update-cobj', async (req, res) => {
+    const reqObj = {
+        url: API_URL + (req.body.id ? '/' + req.body.id : ''),
+        method: req.body.id ? 'patch' : 'post',
+        headers: authHeader,
+        data: {
+            properties: {
+                name: req.body.name,
+                book_author: req.body.book_author,
+                book_page_count: req.body.book_page_count
+            }
+        }
+    };
+    try {
+        await axios.request(reqObj);
+        res.redirect('/');
+    } catch (error) {
+        console.log('Error', error);
+    }
+});
 
 /** 
 * * This is sample code to give you a reference for how you should structure your calls. 
